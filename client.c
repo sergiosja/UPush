@@ -7,49 +7,49 @@ static int fd;
 
 int main(int argc, char const *argv[])
 {
-	validate_args(argc, argv, 0);
-	set_loss_probability(atof(argv[5]) / 100);
+  validate_args(argc, argv, 0);
+  set_loss_probability(atof(argv[5]) / 100);
     strncpy(this_nick, argv[1], 19);
     validate_nick(this_nick, strlen(this_nick));
-	int client_timeout = atoi(argv[4]);
+  int client_timeout = atoi(argv[4]);
 
-	cache = initiate_correspondence();
-	block = initiate_blocklist();
+  cache = initiate_correspondence();
+  block = initiate_blocklist();
 
-	char buffer[BUFSIZE];
-	struct sockaddr_in client_addr, server_addr;
-	struct timeval timeout, register_time;
-	struct in_addr ip_addr;
-	socklen_t addr_len;
-	fd_set fds, original_fds;
+  char buffer[BUFSIZE];
+  struct sockaddr_in client_addr, server_addr;
+  struct timeval timeout, register_time;
+  struct in_addr ip_addr;
+  socklen_t addr_len;
+  fd_set fds, original_fds;
 
-	char server_number = '0';
+  char server_number = '0';
 
-	// Initialise socket
-	fd = socket(AF_INET, SOCK_DGRAM, 0);
-	check_perror(fd, "socket");
+  // Initialise socket
+  fd = socket(AF_INET, SOCK_DGRAM, 0);
+  check_perror(fd, "socket");
 
-	int wc = inet_pton(AF_INET, argv[2], &ip_addr.s_addr);
-	check_perror(wc, "inet_pton");
-	check_error(wc, "inet_pton", __LINE__, __FUNCTION__);
+  int wc = inet_pton(AF_INET, argv[2], &ip_addr.s_addr);
+  check_perror(wc, "inet_pton");
+  check_error(wc, "inet_pton", __LINE__, __FUNCTION__);
 
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(atoi(argv[3]));
-	server_addr.sin_addr = ip_addr;
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_port = htons(atoi(argv[3]));
+  server_addr.sin_addr = ip_addr;
 
-	// Connect to server
+  // Connect to server
     initiate_registration(fd, server_addr, server_number);
 
-	FD_ZERO(&original_fds);
-	FD_SET(fd, &original_fds);
-	FD_SET(STDIN_FILENO, &original_fds);
+  FD_ZERO(&original_fds);
+  FD_SET(fd, &original_fds);
+  FD_SET(STDIN_FILENO, &original_fds);
 
     timeout.tv_sec = client_timeout;
     timeout.tv_usec = 0;
     
-	fds = original_fds;
-	int rc = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
-	check_perror(rc, "select");
+  fds = original_fds;
+  int rc = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
+  check_perror(rc, "select");
 
 
     if (FD_ISSET(fd, &fds)) {
@@ -66,21 +66,21 @@ int main(int argc, char const *argv[])
         return EXIT_SUCCESS;
     }
 
-	rc = gettimeofday(&register_time, NULL);
+  rc = gettimeofday(&register_time, NULL);
     check_perror(rc, "gettimeofday");
-	int previous_registration_time = register_time.tv_sec;
+  int previous_registration_time = register_time.tv_sec;
 
-	for (;;)
-	{
+  for (;;)
+  {
         timeout.tv_sec = client_timeout;
         timeout.tv_usec = 0;
-		fds = original_fds;
-		rc = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
-		check_perror(rc, "select");
+    fds = original_fds;
+    rc = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
+    check_perror(rc, "select");
 
-		// Received a message from another client
-		if (FD_ISSET(fd, &fds))
-		{
+    // Received a message from another client
+    if (FD_ISSET(fd, &fds))
+    {
             if (heartbeat(&previous_registration_time))
             {
                 server_number = server_number == '0' ? '1' : '0';
@@ -88,19 +88,19 @@ int main(int argc, char const *argv[])
             }
             stop_and_wait(cache, fd, server_addr, original_fds, server_number, client_timeout);
 
-			rc = recvfrom(fd, buffer, BUFSIZE-1, 0, (struct sockaddr *) &client_addr, &addr_len);
-			check_perror(rc, "read");
-			buffer[rc] = 0;
+      rc = recvfrom(fd, buffer, BUFSIZE-1, 0, (struct sockaddr *) &client_addr, &addr_len);
+      check_perror(rc, "read");
+      buffer[rc] = 0;
 
-			int current_client_port = ntohs(client_addr.sin_port);
-			char current_client_address[INET_ADDRSTRLEN];
-			inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, current_client_address, INET_ADDRSTRLEN);
+      int current_client_port = ntohs(client_addr.sin_port);
+      char current_client_address[INET_ADDRSTRLEN];
+      inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, current_client_address, INET_ADDRSTRLEN);
 
             correspondence *existing_correspondence = find_correspondence(cache, current_client_address, current_client_port);
 
             // If we received ack
-			char buffer_copy[strlen(buffer)+1];
-			strcpy(buffer_copy, buffer);
+      char buffer_copy[strlen(buffer)+1];
+      strcpy(buffer_copy, buffer);
             char possible_ack = check_ack(buffer_copy);
             if (possible_ack != 2)
             {
@@ -125,18 +125,18 @@ int main(int argc, char const *argv[])
                 continue;
             }
 
-			// If we received something else
-			strcpy(buffer_copy, buffer);
-			int bad_message_check = verify_message(buffer_copy, block);
-			if (bad_message_check)
-			{
+      // If we received something else
+      strcpy(buffer_copy, buffer);
+      int bad_message_check = verify_message(buffer_copy, block);
+      if (bad_message_check)
+      {
                 if ((bad_message_check == 1) || (bad_message_check == 2))
                     send_ack_error(fd, client_addr, bad_message_check);
-				continue;
-			}
+        continue;
+      }
 
-			strcpy(buffer_copy, buffer);
-			packet *received_packet = deserealise_packet(buffer_copy);
+      strcpy(buffer_copy, buffer);
+      packet *received_packet = deserealise_packet(buffer_copy);
             if (!existing_correspondence)
             {
                 char failed_lookup = '0';
@@ -177,43 +177,43 @@ int main(int argc, char const *argv[])
             printf("%s: %s\n", received_packet->from_nick, received_packet->message);
             send_ack_ok(fd, client_addr, received_packet->number);
 
-			free_packets(received_packet);
-		}
+      free_packets(received_packet);
+    }
 
 
-		// Sending message
-		else if (FD_ISSET(STDIN_FILENO, &fds))
-		{
+    // Sending message
+    else if (FD_ISSET(STDIN_FILENO, &fds))
+    {
             if (heartbeat(&previous_registration_time))
             {
                 server_number = server_number == '0' ? '1' : '0';
                 initiate_registration(fd, server_addr, server_number);
             }
             stop_and_wait(cache, fd, server_addr, original_fds, server_number, client_timeout);
-			read_stdin(buffer, BUFSIZE);
+      read_stdin(buffer, BUFSIZE);
 
-			if (!strcmp(buffer, "QUIT")) break;
+      if (!strcmp(buffer, "QUIT")) break;
 
-			if (buffer[0] == '@')
-			{
-				char *message = strchr(buffer, ' ');
+      if (buffer[0] == '@')
+      {
+        char *message = strchr(buffer, ' ');
                 if (!message)
                 {
                     fprintf(stderr, "> warning: message cannot be empty\n");
                     continue;
                 }
 
-				int to_nick_length = strlen(buffer) - strlen(message);
-				char to_nick[to_nick_length];
-				strncpy(to_nick, &buffer[1], to_nick_length-1);
-				to_nick[to_nick_length-1] = 0;
+        int to_nick_length = strlen(buffer) - strlen(message);
+        char to_nick[to_nick_length];
+        strncpy(to_nick, &buffer[1], to_nick_length-1);
+        to_nick[to_nick_length-1] = 0;
 
-				if (find_blocked(block, to_nick)) continue;
+        if (find_blocked(block, to_nick)) continue;
 
-				int message_length = strlen(message) >= MAX_MESSAGE_LENGTH ? MAX_MESSAGE_LENGTH - 1 : strlen(message);
-				char prepared_message[message_length];
-				strncpy(prepared_message, &message[1], message_length-1);
-				prepared_message[message_length-1] = 0;
+        int message_length = strlen(message) >= MAX_MESSAGE_LENGTH ? MAX_MESSAGE_LENGTH - 1 : strlen(message);
+        char prepared_message[message_length];
+        strncpy(prepared_message, &message[1], message_length-1);
+        prepared_message[message_length-1] = 0;
 
                 if (!validate_message(prepared_message, message_length))
                 {
@@ -221,44 +221,44 @@ int main(int argc, char const *argv[])
                     continue;
                 }
 
-				// Looking up receiver
+        // Looking up receiver
                 correspondence *current = find_correspondence_by_nick(cache, to_nick);
-				if (!current)
-				{
+        if (!current)
+        {
                     server_number = server_number == '0' ? '1' : '0';
                     lookup_client(fd, server_addr, server_number, to_nick);
-					int number_of_lookups = 1;
-					for (;;)
-					{
+          int number_of_lookups = 1;
+          for (;;)
+          {
                         timeout.tv_sec = client_timeout;
                         timeout.tv_usec = 0;
-						fds = original_fds;
-						rc = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
-						check_perror(rc, "select");
+            fds = original_fds;
+            rc = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
+            check_perror(rc, "select");
 
-						if (FD_ISSET(fd, &fds))
+            if (FD_ISSET(fd, &fds))
                         {
-							rc = recvfrom(fd, buffer, BUFSIZE - 1, 0, (struct sockaddr *) &server_addr, &addr_len);
-							check_perror(rc, "recv");
-							buffer[rc] = 0;
+              rc = recvfrom(fd, buffer, BUFSIZE - 1, 0, (struct sockaddr *) &server_addr, &addr_len);
+              check_perror(rc, "recv");
+              buffer[rc] = 0;
                             break;
-						}
+            }
                         else if (number_of_lookups == 3)
                         {
-							fprintf(stderr, "> Lookup failed, shutting down client ...\n");
-							quit();
-							return EXIT_SUCCESS;
+              fprintf(stderr, "> Lookup failed, shutting down client ...\n");
+              quit();
+              return EXIT_SUCCESS;
                         }
 
                         lookup_client(fd, server_addr, server_number, to_nick);
                         number_of_lookups++;
-					}
+          }
 
-					if (strstr(buffer, "NOT FOUND"))
-					{
-						fprintf(stderr, "NICK %s NOT REGISTERED\n", to_nick);
-						continue;
-					}
+          if (strstr(buffer, "NOT FOUND"))
+          {
+            fprintf(stderr, "NICK %s NOT REGISTERED\n", to_nick);
+            continue;
+          }
 
                     if (strstr(buffer, "OK"))
                     {
@@ -271,7 +271,7 @@ int main(int argc, char const *argv[])
                     send_message_to_client('0', current->nick, strlen(current->nick),
                                             prepared_message, strlen(prepared_message), fd, current->sock_addr);
                     continue;
-				}
+        }
 
                 current->last_sent_number = current->last_sent_number == '0' ? '1' : '0';
                 packet *new_packet = register_new_packet(current->last_sent_number, current->nick, prepared_message);
@@ -288,29 +288,29 @@ int main(int argc, char const *argv[])
                                             strlen(current->queue->next->to_nick), current->queue->next->message,
                                             strlen(current->queue->next->message), fd, current->sock_addr);
                 }
-			}
-			else if (strstr(buffer, "UNBLOCK"))
-			{
-				strtok(buffer, " ");
-				unblock_client(block, strtok(NULL, " "));
-			}
-			else if (strstr(buffer, "BLOCK"))
-			{
-				strtok(buffer, " ");
+      }
+      else if (strstr(buffer, "UNBLOCK"))
+      {
+        strtok(buffer, " ");
+        unblock_client(block, strtok(NULL, " "));
+      }
+      else if (strstr(buffer, "BLOCK"))
+      {
+        strtok(buffer, " ");
                 char *token = strtok(NULL, " ");
-				block_client(block, find_correspondence_by_nick(cache, token), token);
-			}
-		}
+        block_client(block, find_correspondence_by_nick(cache, token), token);
+      }
+    }
         else
         {
             server_number = server_number == '0' ? '1' : '0';
             initiate_registration(fd, server_addr, server_number);
             stop_and_wait(cache, fd, server_addr, original_fds, server_number, client_timeout);
         }
-	}
+  }
 
-	quit();
-	return EXIT_SUCCESS;
+  quit();
+  return EXIT_SUCCESS;
 }
 
 
@@ -363,33 +363,33 @@ void remove_delivered_packet_from_queue(packet *head)
 
 packet *deserealise_packet(char *buffer)
 {
-	packet *current = malloc(sizeof(packet));
+  packet *current = malloc(sizeof(packet));
 
-	strtok(buffer, " ");
-	current->number = strtok(NULL, " ")[0];
+  strtok(buffer, " ");
+  current->number = strtok(NULL, " ")[0];
 
-	strtok(NULL, " ");
-	current->from_nick = malloc(MAX_NICK_LENGTH);
-	strncpy(current->from_nick, strtok(NULL, " "), MAX_NICK_LENGTH-1);
+  strtok(NULL, " ");
+  current->from_nick = malloc(MAX_NICK_LENGTH);
+  strncpy(current->from_nick, strtok(NULL, " "), MAX_NICK_LENGTH-1);
 
-	strtok(NULL, " ");
-	current->to_nick = malloc(MAX_NICK_LENGTH);
-	strncpy(current->to_nick, strtok(NULL, " "), MAX_NICK_LENGTH-1);
+  strtok(NULL, " ");
+  current->to_nick = malloc(MAX_NICK_LENGTH);
+  strncpy(current->to_nick, strtok(NULL, " "), MAX_NICK_LENGTH-1);
 
-	current->message = malloc(MAX_MESSAGE_LENGTH);
-	memset(current->message, 0, MAX_MESSAGE_LENGTH);
+  current->message = malloc(MAX_MESSAGE_LENGTH);
+  memset(current->message, 0, MAX_MESSAGE_LENGTH);
 
-	strtok(NULL, " ");
-	char *token = strtok(NULL, " ");
-	while (token)
-	{
-		strcat(current->message, token);
-		strcat(current->message, " ");
-		token = strtok(NULL, " ");
-	}
+  strtok(NULL, " ");
+  char *token = strtok(NULL, " ");
+  while (token)
+  {
+    strcat(current->message, token);
+    strcat(current->message, " ");
+    token = strtok(NULL, " ");
+  }
 
     current->next = NULL;
-	return current;
+  return current;
 }
 
 
@@ -432,10 +432,10 @@ correspondence *register_correspondence(correspondence *head, char *nick, char s
     new_correspondence->address = strdup(address);
     new_correspondence->port = port;
     new_correspondence->sock_addr.sin_family = AF_INET;
-	new_correspondence->sock_addr.sin_port = htons(port);
-	int wc = inet_pton(AF_INET, address, &new_correspondence->sock_addr.sin_addr.s_addr);
-	check_perror(wc, "inet_pton");
-	check_error(wc, "inet_pton", __LINE__, __FUNCTION__);
+  new_correspondence->sock_addr.sin_port = htons(port);
+  int wc = inet_pton(AF_INET, address, &new_correspondence->sock_addr.sin_addr.s_addr);
+  check_perror(wc, "inet_pton");
+  check_error(wc, "inet_pton", __LINE__, __FUNCTION__);
 
     new_correspondence->queue = packet_head();
     add_packet_to_queue(new_correspondence->queue, p);
@@ -499,7 +499,7 @@ correspondence *find_correspondence(correspondence *head, char *address, uint16_
 
 void remove_correspondence(correspondence *head, char *nick)
 {
-	correspondence *current = head;
+  correspondence *current = head;
     while (current->next)
     {
         if (!strcmp(current->next->nick, nick))
@@ -521,16 +521,16 @@ void remove_correspondence(correspondence *head, char *nick)
 
 void free_correspondences(correspondence *head)
 {
-	correspondence *current;
-	while (head)
-	{
-		current = head;
-		head = head->next;
-		free(current->nick);
-		free(current->address);
+  correspondence *current;
+  while (head)
+  {
+    current = head;
+    head = head->next;
+    free(current->nick);
+    free(current->address);
         free_packets(current->queue);
-		free(current);
-	}
+    free(current);
+  }
 }
 
 
@@ -545,16 +545,16 @@ blocked *initiate_blocklist()
 
 void block_client(blocked *head, correspondence *corr, char *nick)
 {
-	blocked *new_blocked = malloc(sizeof(blocked));
-	new_blocked->nick = malloc(MAX_NICK_LENGTH);
-	strncpy(new_blocked->nick, nick, MAX_NICK_LENGTH-1);
+  blocked *new_blocked = malloc(sizeof(blocked));
+  new_blocked->nick = malloc(MAX_NICK_LENGTH);
+  strncpy(new_blocked->nick, nick, MAX_NICK_LENGTH-1);
 
-	blocked *current = head;
-	while (current->next)
-		current = current->next;
+  blocked *current = head;
+  while (current->next)
+    current = current->next;
 
-	current->next = new_blocked;
-	new_blocked->next = NULL;
+  current->next = new_blocked;
+  new_blocked->next = NULL;
 
     if (corr)
         corr->last_received_number = 'x';
@@ -563,57 +563,57 @@ void block_client(blocked *head, correspondence *corr, char *nick)
 
 void unblock_client(blocked *head, char *nick)
 {
-	blocked *current = head;
-	while (current->next)
-	{
-		if (!strcmp(current->next->nick, nick))
-		{
-			blocked *tmp = current->next;
-			current->next = current->next->next;
-			free(tmp->nick);
-			free(tmp);
-			break;
-		}
-		current = current->next;
-	}
+  blocked *current = head;
+  while (current->next)
+  {
+    if (!strcmp(current->next->nick, nick))
+    {
+      blocked *tmp = current->next;
+      current->next = current->next->next;
+      free(tmp->nick);
+      free(tmp);
+      break;
+    }
+    current = current->next;
+  }
 }
 
 
 blocked *find_blocked(blocked *head, char *nick)
 {
-	blocked *current = head->next;
-	while (current)
-	{
-		if (!strcmp(current->nick, nick))
-			return current;
-		current = current->next;
-	}
+  blocked *current = head->next;
+  while (current)
+  {
+    if (!strcmp(current->nick, nick))
+      return current;
+    current = current->next;
+  }
 
-	return NULL;
+  return NULL;
 }
 
 
 void free_blocked_clients(blocked *head)
 {
-	blocked *current;
-	while (head)
-	{
-		current = head;
-		head = head->next;
-		free(current->nick);
-		free(current);
-	}
+  blocked *current;
+  while (head)
+  {
+    current = head;
+    head = head->next;
+    free(current->nick);
+    free(current);
+  }
 }
 
 
 void initiate_registration(int fd, struct sockaddr_in server_address, char number)
 {
-	char *message = malloc(strlen(this_nick) + REGISTER_CLIENT_SIZE);
-	snprintf(message, strlen(this_nick) + REGISTER_CLIENT_SIZE, "PKT %c REG %s", number, this_nick);
+  char *message = malloc(strlen(this_nick) + REGISTER_CLIENT_SIZE);
+  snprintf(message, strlen(this_nick) + REGISTER_CLIENT_SIZE, "PKT %c REG %s", number, this_nick);
     int wc = send_packet(fd, message, strlen(message), 0,
-					(struct sockaddr *) &server_address, sizeof(struct sockaddr_in));
-	check_perror(wc, "send_packet");
-	free(message);
+          (struct sockaddr *) &server_address, sizeof(struct sockaddr_in));
+  check_perror(wc, "send_packet");
+  free(message);
 }
 
 
@@ -634,8 +634,8 @@ int heartbeat(int *previous_registration_time)
 
 void lookup_client(int fd, struct sockaddr_in address, char number, char *nick)
 {
-	char *message = malloc(LOOKUP_SIZE + strlen(nick));
-	snprintf(message, LOOKUP_SIZE + strlen(nick), "PKT %c LOOKUP %s", number, nick);
+  char *message = malloc(LOOKUP_SIZE + strlen(nick));
+  snprintf(message, LOOKUP_SIZE + strlen(nick), "PKT %c LOOKUP %s", number, nick);
     int wc = send_packet(fd, message, strlen(message), 0,
                     (struct sockaddr *) &address, sizeof(struct sockaddr_in));
     check_perror(wc, "send_packet");
@@ -646,8 +646,8 @@ void lookup_client(int fd, struct sockaddr_in address, char number, char *nick)
 void send_message_to_client(char number, char *to, int to_length, char *msg, int msg_length, int fd, struct sockaddr_in dest)
 {
     int length = strlen(this_nick) + to_length + msg_length + CLIENT_MESSAGE_SIZE;
-	char *message = malloc(length);
-	snprintf(message, length, "PKT %c FROM %s TO %s MSG %s", number, this_nick, to, msg);
+  char *message = malloc(length);
+  snprintf(message, length, "PKT %c FROM %s TO %s MSG %s", number, this_nick, to, msg);
 
     int wc = send_packet(fd, message, strlen(message), 0,
             (struct sockaddr *) &dest, sizeof(struct sockaddr_in));
@@ -659,7 +659,7 @@ void send_message_to_client(char number, char *to, int to_length, char *msg, int
 void send_ack_ok(int fd, struct sockaddr_in address, char number)
 {
     char *message = malloc(ACK_OK_SIZE);
-	snprintf(message, ACK_OK_SIZE, "ACK %c OK", number);
+  snprintf(message, ACK_OK_SIZE, "ACK %c OK", number);
     int wc = send_packet(fd, message, strlen(message), 0,
                     (struct sockaddr *) &address, sizeof(struct sockaddr_in));
     check_perror(wc, "send_packet");
@@ -669,11 +669,11 @@ void send_ack_ok(int fd, struct sockaddr_in address, char number)
 
 void send_ack_error(int fd, struct sockaddr_in address, int format)
 {
-	char *message = malloc(ACK_ERROR_SIZE);
+  char *message = malloc(ACK_ERROR_SIZE);
     if (format == 1)
-    	snprintf(message, ACK_ERROR_SIZE, "ACK X WRONG FORMAT");
+      snprintf(message, ACK_ERROR_SIZE, "ACK X WRONG FORMAT");
     else if (format == 2)
-    	snprintf(message, ACK_ERROR_SIZE, "ACK X WRONG NAME");
+      snprintf(message, ACK_ERROR_SIZE, "ACK X WRONG NAME");
 
     int rc = send_packet(fd, message, strlen(message), 0,
                     (struct sockaddr *) &address, sizeof(struct sockaddr_in));
@@ -684,51 +684,51 @@ void send_ack_error(int fd, struct sockaddr_in address, int format)
 
 char check_ack(char *buffer)
 {
-	if (!strcmp(strtok(buffer, " "), "ACK"))
-	{
-		return strtok(NULL, " ")[0];
-	}
-	return 2;
+  if (!strcmp(strtok(buffer, " "), "ACK"))
+  {
+    return strtok(NULL, " ")[0];
+  }
+  return 2;
 }
 
 
 int verify_message(char *buffer, blocked *check)
 {
-	if (strcmp("PKT", strtok(buffer, " ")))
-		return 1;
+  if (strcmp("PKT", strtok(buffer, " ")))
+    return 1;
 
-	char number = strtok(NULL, " ")[0];
-	if ((number != '0') && (number != '1'))
-		return 1;
+  char number = strtok(NULL, " ")[0];
+  if ((number != '0') && (number != '1'))
+    return 1;
 
-	if (strcmp("FROM", strtok(NULL, " ")))
-		return 1;
+  if (strcmp("FROM", strtok(NULL, " ")))
+    return 1;
 
     if (find_blocked(check, strtok(NULL, " "))) {
         return 3;
     }
 
-	if (strcmp("TO", strtok(NULL, " ")))
-		return 1;
+  if (strcmp("TO", strtok(NULL, " ")))
+    return 1;
 
-	if (strcmp(this_nick, strtok(NULL, " ")))
-		return 2;
+  if (strcmp(this_nick, strtok(NULL, " ")))
+    return 2;
 
-	if (strcmp("MSG", strtok(NULL, " ")))
-		return 1;
+  if (strcmp("MSG", strtok(NULL, " ")))
+    return 1;
 
-	return 0;
+  return 0;
 }
 
 
 void read_stdin(char buffer[], int size)
 {
-	char c;
-	fgets(buffer, size, stdin);
-	if (buffer[strlen(buffer) - 1 == '\n'])
-		buffer[strlen(buffer) - 1] = 0;
-	else
-		while((c = getchar()) != '\n' && c != EOF);
+  char c;
+  fgets(buffer, size, stdin);
+  if (buffer[strlen(buffer) - 1 == '\n'])
+    buffer[strlen(buffer) - 1] = 0;
+  else
+    while((c = getchar()) != '\n' && c != EOF);
 }
 
 
@@ -823,31 +823,31 @@ void stop_and_wait(correspondence *head, int fd, struct sockaddr_in server_addr,
 
 void quit()
 { 
-	free_blocked_clients(block);
+  free_blocked_clients(block);
     free_correspondences(cache);
-	close(fd);
+  close(fd);
 }
 
 
 void check_perror(int result, char *msg)
 {
-	if (result == -1)
-	{
-		perror(msg);
+  if (result == -1)
+  {
+    perror(msg);
         quit();
         exit(EXIT_FAILURE);
-	}
+  }
 }
 
 
 void check_error(int result, char *msg, int line, const char *function)
 {
-	if (!result)
-	{
-		fprintf(stderr, "> Shutdown triggered by %s in %d on line %s\n", msg, line, function);
+  if (!result)
+  {
+    fprintf(stderr, "> Shutdown triggered by %s in %d on line %s\n", msg, line, function);
         quit();
         exit(EXIT_FAILURE);
-	}
+  }
 }
 
 
