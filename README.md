@@ -16,4 +16,4 @@ To start a client, run
 ```
 
 ### Note
-For some reason the files have massive intendation errors when posted to Github, but they look completely fine locally. For instance, `server.c` is double indented (8 rather than 4) and `client.c` is all over the place really. Not sure how to fix this, and would love some feedback on the matter😄
+For some reason the files have massive intendation faults when posted to Github, despite looking completely fine locally. For instance, `server.c` is double indented (8 rather than 4) and `client.c` is all over the place really. Not sure how to fix this, and would love some feedback on the matter😄
