@@ -18,7 +18,6 @@ typedef struct packet
     struct packet *next;
 } packet;
 
-
 // The clients client-cache
 typedef struct correspondence
 {
@@ -34,7 +33,6 @@ typedef struct correspondence
     struct sockaddr_in sock_addr;
     struct correspondence *next;
 } correspondence;
-
 
 // The clients list of blocked nicks
 typedef struct blocked

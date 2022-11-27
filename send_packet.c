@@ -8,7 +8,7 @@ void set_loss_probability(float x)
     srand48(time(NULL));
 }
 
-ssize_t send_packet(int sock, void* buffer, size_t size, int flags, struct sockaddr* addr, socklen_t addrlen)
+ssize_t send_packet(int sock, void *buffer, size_t size, int flags, struct sockaddr *addr, socklen_t addrlen)
 {
     float rnd = drand48();
     if (rnd < loss_probability)

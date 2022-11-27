@@ -9,13 +9,13 @@
 // The servers client-cache
 typedef struct client
 {
-	char *nick;
-	char *address;
-	uint16_t port;
+    char *nick;
+    char *address;
+    uint16_t port;
     long last_registered;
 
     struct sockaddr_in sock_addr;
-	struct client *next;
+    struct client *next;
 } client;
 
 /*
